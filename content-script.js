@@ -113,9 +113,8 @@ async function checkForInput() {
         cancelable: true,
       }));
       // Auto submit
-      document.getElementsByTagName('button')[2].click();
+      // document.getElementsByTagName('button')[2].click();
       webSocket.close();
-      // document.getElementsByTagName('button')[2].click()
     }
   };
 
