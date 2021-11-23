@@ -35,9 +35,15 @@ async function checkForInput() {
   }
   webSocket = new WebSocket('wss://easytfa.genemon.at');
   webSocket.onopen = async () => {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16)
+      .padStart(2, '0'))
+      .join('');
     const messageUnencrypted = JSON.stringify({
       action: 'query-code',
       url: location.origin,
+      hash: hashHex,
     });
     const importedAppPublicKey = await crypto.subtle.importKey(
       'spki',
@@ -52,12 +58,6 @@ async function checkForInput() {
     const encryptedMessage = await crypto.subtle.encrypt({
       name: 'RSA-OAEP',
     }, importedAppPublicKey, new TextEncoder().encode(messageUnencrypted));
-    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16)
-      .padStart(2, '0'))
-      .join('');
-
     webSocket.send(JSON.stringify({
       event: 'query-code',
       data: {
