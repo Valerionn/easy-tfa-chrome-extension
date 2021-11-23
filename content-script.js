@@ -69,7 +69,7 @@ async function checkForInput() {
   webSocket.onmessage = async (response) => {
     const responseData = JSON.parse(response.data);
     if(responseData.event === 'code') {
-      const { code } = responseData;
+      const { message } = responseData;
       const { privateKey } = await keyPromise;
       const importedPrivateKey = await crypto.subtle.importKey(
         'pkcs8',
@@ -84,9 +84,12 @@ async function checkForInput() {
       const decryptedBuf = await crypto.subtle.decrypt({
           name: 'RSA-OAEP',
         }, importedPrivateKey,
-        str2ab(code));
-      const decrypted = new TextDecoder().decode(decryptedBuf);
-      input.value = decrypted;
+        str2ab(message));
+      const decrypted = JSON.parse(new TextDecoder().decode(decryptedBuf));
+      if(decrypted.url !== location.origin) {
+        return;
+      }
+      input.value = decrypted.code;
       webSocket.close();
       // document.getElementsByTagName('button')[2].click()
     }
