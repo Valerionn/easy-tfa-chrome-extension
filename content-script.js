@@ -69,7 +69,7 @@ async function checkForInput() {
   webSocket.onmessage = async (response) => {
     const responseData = JSON.parse(response.data);
     if(responseData.event === 'code') {
-      const { message } = responseData;
+      const message = atob(responseData.message);
       const { privateKey } = await keyPromise;
       const importedPrivateKey = await crypto.subtle.importKey(
         'pkcs8',
