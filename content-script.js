@@ -69,6 +69,7 @@ async function checkForInput() {
       },
     }));
   };
+  // TODO: Websocket keepalive
   webSocket.onmessage = async (response) => {
     const responseData = JSON.parse(response.data);
     if(responseData.event === 'code') {
@@ -113,7 +114,7 @@ async function checkForInput() {
         cancelable: true,
       }));
       // Auto submit
-      // document.getElementsByTagName('button')[2].click();
+      document.getElementsByTagName('button')[2].click();
       webSocket.close();
     }
   };
