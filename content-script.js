@@ -107,6 +107,13 @@ async function checkForInput() {
           cancelable: true,
         }),
       );
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        keyCode: 13,
+        bubbles: true,
+        cancelable: true,
+      }));
+      // Auto submit
+      document.getElementsByTagName('button')[2].click();
       webSocket.close();
       // document.getElementsByTagName('button')[2].click()
     }
