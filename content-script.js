@@ -28,7 +28,10 @@ async function checkForInput() {
     return;
   }
   console.log('input found!');
-  const { appPublicKey, publicKey } = await keyPromise;
+  const {
+    appPublicKey,
+    publicKey,
+  } = await keyPromise;
   if(appPublicKey == null) {
     console.log('Not linked yet.');
     return;
@@ -90,6 +93,20 @@ async function checkForInput() {
         return;
       }
       input.value = decrypted.code;
+      input.dispatchEvent(
+        new UIEvent('input', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      input.dispatchEvent(
+        new UIEvent('change', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
       webSocket.close();
       // document.getElementsByTagName('button')[2].click()
     }
