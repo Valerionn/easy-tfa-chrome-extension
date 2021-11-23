@@ -10,6 +10,10 @@ function str2ab(str) {
   return buf;
 }
 
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
 async function handle() {
   const shouldLoad = location.href.startsWith('https://dash.cloudflare.com/two-factor', 0);
   if(!shouldLoad) return;
@@ -29,7 +33,7 @@ async function checkForInput() {
     console.log('Not linked yet.');
     return;
   }
-  webSocket = new WebSocket('ws://localhost:3000');
+  webSocket = new WebSocket('wss://easytfa.genemon.at');
   webSocket.onopen = async () => {
     const messageUnencrypted = JSON.stringify({
       action: 'query-code',
@@ -48,7 +52,7 @@ async function checkForInput() {
     const encryptedMessage = await crypto.subtle.encrypt({
       name: 'RSA-OAEP',
     }, importedAppPublicKey, new TextEncoder().encode(messageUnencrypted));
-    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(publicKey));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16)
       .padStart(2, '0'))
@@ -58,7 +62,7 @@ async function checkForInput() {
       event: 'query-code',
       data: {
         hash: hashHex,
-        message: encryptedMessage,
+        message: btoa(ab2str(encryptedMessage)),
       },
     }));
   };

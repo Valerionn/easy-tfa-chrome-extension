@@ -7,27 +7,31 @@ function str2ab(str) {
   return buf;
 }
 
+async function hashKey(publicKeyBase64) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(publicKeyBase64));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16)
+    .padStart(2, '0'))
+    .join('');
+}
+
 (async function () {
   const { publicKey, appPublicKey } = await chrome.storage.local.get(['publicKey', 'appPublicKey']);
-  if(appPublicKey != null) {
+  if(appPublicKey != null && appPublicKey.trim() !== '') {
     document.getElementById('status').innerHTML = 'Linked.';
     return;
   }
   const publicKeyBase64 = btoa(publicKey);
   const secret = new Uint8Array(32);
   crypto.getRandomValues(secret);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(publicKeyBase64));
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16)
-    .padStart(2, '0'))
-    .join('');
+  const hashHex = await hashKey(publicKeyBase64);
   const secretHex = Array.from(secret)
     .map(b => b.toString(16)
       .padStart(2, '0'))
     .join('');
   // The QR code will be generated after WS connection (since qrcode generation takes ~50ms and we have to wait for the server anyways)
   let qrcode;
-  const ws = new WebSocket('ws://localhost:3000');
+  const ws = new WebSocket('wss://easytfa.genemon.at');
   ws.onopen = () => {
     ws.send(JSON.stringify({
       event: 'start-linking',
@@ -62,7 +66,13 @@ function str2ab(str) {
         document.getElementById('status').innerHTML = `Someone tried linking with the wrong secret!`;
         return;
       }
-      const appPublicKey = atob(decrypted.publicKey);
+      const appPublicKeyBase64 = responseData.appPublicKey;
+      const hash = await hashKey(appPublicKeyBase64);
+      if(hash !== decrypted.appPublicKeyHash) {
+        document.getElementById('status').innerHTML = `Manipulated public key!`;
+        return;
+      }
+      const appPublicKey = atob(appPublicKeyBase64);
       await chrome.storage.local.set({
         appPublicKey,
       });
