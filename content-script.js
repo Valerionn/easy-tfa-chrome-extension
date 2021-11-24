@@ -1,5 +1,35 @@
+const config = {
+  'https://dash.cloudflare.com': [{
+    url: 'https://dash.cloudflare.com/two-factor',
+    inputSelector: () => document.getElementById('twofactor_token'),
+    submitSelector: () => document.getElementsByTagName('button')[2],
+  }],
+  'https://accounts.hetzner.com': [{
+    url: 'https://accounts.hetzner.com',
+    inputSelector: () => document.getElementById('input-verify-code'),
+    submitSelector: () => document.getElementById('btn-submit'),
+  }],
+  'https://github.com': [{
+    url: 'https://github.com/sessions/two-factor',
+    inputSelector: () => document.getElementById('otp'),
+    submitSelector: () => document.querySelector('button.btn-primary'),
+  }],
+  'https://www.amazon.de': [{
+    url: 'https://www.amazon.de/ap/mfa',
+    inputSelector: () => document.getElementById('auth-mfa-otpcode'),
+    submitSelector: () => document.getElementById('auth-signin-button'),
+  }],
+  'https://login.microsoftonline.com/': [{
+    url: 'https://login.microsoftonline.com/common/login',
+    inputSelector: () => document.getElementById('auth-mfa-otpcode'),
+    submitSelector: () => document.getElementById('auth-signin-button'),
+
+  }],
+};
+
 let webSocket;
 let keyPromise;
+let currentConfig;
 
 function str2ab(str) {
   const buf = new ArrayBuffer(str.length);
@@ -15,16 +45,19 @@ function ab2str(buf) {
 }
 
 async function handle() {
-  const shouldLoad = location.href.startsWith('https://dash.cloudflare.com/two-factor', 0);
-  if(!shouldLoad) return;
+  const configs = config[location.origin];
+  if(configs == null) return;
+  const configToLoad = configs.find(config => location.href.startsWith(config.url));
+  if(configToLoad == null) return;
+  currentConfig = configToLoad;
   keyPromise = chrome.storage.local.get(['publicKey', 'privateKey', 'appPublicKey']);
   await checkForInput();
 }
 
 async function checkForInput() {
-  const input = document.getElementById('twofactor_token');
+  const input = currentConfig.inputSelector();
   if(input == null) {
-    setTimeout(checkForInput, 50);
+    setTimeout(checkForInput, 100);
     return;
   }
   console.log('input found!');
@@ -69,7 +102,7 @@ async function checkForInput() {
       },
     }));
   };
-  // TODO: Websocket keepalive
+  // TODO: Websocket keepalive(?)
   webSocket.onmessage = async (response) => {
     const responseData = JSON.parse(response.data);
     if(responseData.event === 'code') {
@@ -114,7 +147,10 @@ async function checkForInput() {
         cancelable: true,
       }));
       // Auto submit
-      document.getElementsByTagName('button')[2].click();
+      const submit = currentConfig.submitSelector();
+      if(submit != null) {
+        submit.click();
+      }
       webSocket.close();
     }
   };
