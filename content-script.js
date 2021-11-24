@@ -24,6 +24,12 @@ const config = {
     inputSelector: () => document.getElementsByName('otc')[0],
     submitSelector: () => document.querySelector('.button_primary'),
   }],
+  'https://app.qa-yarrive.com': [{
+    // TODO - SPA loads pages but we won't get injected each time, so just inject it everywhere for now
+    url: 'https://app.qa-yarrive.com',
+    inputSelector: () => document.getElementById('tfa'),
+    submitSelector: () => document.getElementById('login'),
+  }],
 };
 
 let webSocket;
@@ -148,7 +154,10 @@ async function checkForInput() {
       // Auto submit
       const submit = currentConfig.submitSelector();
       if(submit != null) {
-        submit.click();
+        // For Aurelia, we need this delay
+        setTimeout(() => {
+          submit.click();
+        }, 0)
       }
       webSocket.close();
     }

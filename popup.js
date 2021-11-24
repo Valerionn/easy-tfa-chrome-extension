@@ -44,6 +44,10 @@ async function hashKey(publicKeyBase64) {
     .join('');
 }
 
+async function unlink() {
+
+}
+
 (async function () {
   let {
     publicKey,
@@ -54,6 +58,17 @@ async function hashKey(publicKeyBase64) {
   }
   if(appPublicKey != null && appPublicKey.trim() !== '') {
     document.getElementById('status').innerHTML = 'Linked.';
+    document.getElementById('unlink').style.display = 'block';
+    document.getElementById('unlink').addEventListener('click', async () => {
+      const shouldUnlink = confirm('Really unlink?');
+      if(!shouldUnlink) return;
+      await (window['browser'] || chrome).storage.local.set({
+        publicKey: null,
+        privateKey: null,
+        appPublicKey: null,
+      });
+      location.reload();
+    });
     return;
   }
   const publicKeyBase64 = btoa(publicKey);
