@@ -1,3 +1,11 @@
+/**
+ * Convert an ArrayBuffer into a string
+ * from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+ */
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
 function str2ab(str) {
   const buf = new ArrayBuffer(str.length);
   const bufView = new Uint8Array(buf);
@@ -5,6 +13,27 @@ function str2ab(str) {
     bufView[i] = str.charCodeAt(i);
   }
   return buf;
+}
+
+async function createKeyPair() {
+  console.log('Generating new key...');
+  const keyPair = await crypto.subtle.generateKey({
+    name: 'RSA-OAEP',
+    modulusLength: 4096,
+    publicExponent: new Uint8Array([1, 0, 1]),
+    hash: 'SHA-256',
+  }, true, ['encrypt', 'decrypt']);
+  const privateKeyExported = ab2str(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey));
+  const publicKeyExported = ab2str(await crypto.subtle.exportKey('spki', keyPair.publicKey));
+
+  await (window['browser'] || chrome).storage.local.set({
+    privateKey: privateKeyExported,
+    publicKey: publicKeyExported,
+  });
+  return {
+    privateKey: privateKeyExported,
+    publicKey: publicKeyExported,
+  };
 }
 
 async function hashKey(publicKeyBase64) {
@@ -16,7 +45,13 @@ async function hashKey(publicKeyBase64) {
 }
 
 (async function () {
-  const { publicKey, appPublicKey } = await chrome.storage.local.get(['publicKey', 'appPublicKey']);
+  let {
+    publicKey,
+    appPublicKey,
+  } = await (window['browser'] || chrome).storage.local.get(['publicKey', 'appPublicKey']);
+  if(publicKey == null) {
+    publicKey = (await createKeyPair()).publicKey;
+  }
   if(appPublicKey != null && appPublicKey.trim() !== '') {
     document.getElementById('status').innerHTML = 'Linked.';
     return;
@@ -46,7 +81,7 @@ async function hashKey(publicKeyBase64) {
     } else if(responseData.event === 'link') {
       const message = atob(responseData.message);
       // TODO - refactor this decrypt thingy into a separate method incl. str2ab
-      const { privateKey } = await chrome.storage.local.get('privateKey');
+      const { privateKey } = await (window['browser'] || chrome).storage.local.get('privateKey');
       const importedPrivateKey = await crypto.subtle.importKey(
         'pkcs8',
         str2ab(privateKey),
@@ -73,7 +108,7 @@ async function hashKey(publicKeyBase64) {
         return;
       }
       const appPublicKey = atob(appPublicKeyBase64);
-      await chrome.storage.local.set({
+      await (window['browser'] || chrome).storage.local.set({
         appPublicKey,
       });
       qrcode.clear();

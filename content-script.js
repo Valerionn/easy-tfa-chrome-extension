@@ -19,11 +19,10 @@ const config = {
     inputSelector: () => document.getElementById('auth-mfa-otpcode'),
     submitSelector: () => document.getElementById('auth-signin-button'),
   }],
-  'https://login.microsoftonline.com/': [{
-    url: 'https://login.microsoftonline.com/common/login',
-    inputSelector: () => document.getElementById('auth-mfa-otpcode'),
-    submitSelector: () => document.getElementById('auth-signin-button'),
-
+  'https://login.microsoftonline.com': [{
+    url: 'https://login.microsoftonline.com/',
+    inputSelector: () => document.getElementsByName('otc')[0],
+    submitSelector: () => document.querySelector('.button_primary'),
   }],
 };
 
@@ -50,7 +49,7 @@ async function handle() {
   const configToLoad = configs.find(config => location.href.startsWith(config.url));
   if(configToLoad == null) return;
   currentConfig = configToLoad;
-  keyPromise = chrome.storage.local.get(['publicKey', 'privateKey', 'appPublicKey']);
+  keyPromise = (window['browser'] || chrome).storage.local.get(['publicKey', 'privateKey', 'appPublicKey']);
   await checkForInput();
 }
 

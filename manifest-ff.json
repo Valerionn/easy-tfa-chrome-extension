@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "EasyTFA",
   "version": "0.0.1",
   "description": "Connect your browser with the EasyTFA app to automatically transmit TOTP codes",
@@ -12,7 +12,7 @@
   "permissions": [
     "storage"
   ],
-  "action": {
+  "browser_action": {
     "default_popup": "popup.html"
   }
 }
