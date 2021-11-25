@@ -1,5 +1,5 @@
 /*
-Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch, npm
+Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch
  */
 const config = {
   'https://dash.cloudflare.com': [{
@@ -48,7 +48,11 @@ const config = {
     url: 'https://old.reddit.com',
     inputSelector: () => document.getElementById('otpfield'),
     submitSelector: () => document.getElementsByClassName('tfa-login-submit')[0],
-
+  }],
+  'https://www.npmjs.com': [{
+    url: 'https://www.npmjs.com/login/otp',
+    inputSelector: () => document.getElementById('login_otp'),
+    submitSelector: () => document.getElementsByTagName('button')[0],
   }],
 };
 
@@ -166,11 +170,6 @@ async function checkForInput() {
           cancelable: true,
         }),
       );
-      input.dispatchEvent(new KeyboardEvent('keydown', {
-        keyCode: 13,
-        bubbles: true,
-        cancelable: true,
-      }));
       // Auto submit
       const submit = currentConfig.submitSelector();
       if(submit != null) {
