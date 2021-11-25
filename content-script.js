@@ -59,6 +59,7 @@ const config = {
 let webSocket;
 let keyPromise;
 let currentConfig;
+let oneTimePad;
 
 function str2ab(str) {
   const buf = new ArrayBuffer(str.length);
@@ -105,10 +106,19 @@ async function checkForInput() {
     const hashHex = hashArray.map(b => b.toString(16)
       .padStart(2, '0'))
       .join('');
-    const messageUnencrypted = JSON.stringify({
+    oneTimePad = new Uint8Array(6);
+    crypto.getRandomValues(oneTimePad);
+    const oneTimePadString = btoa(ab2str(oneTimePad));
+    const checksumBytes = new Uint8Array(3);
+    crypto.getRandomValues(checksumBytes);
+    const checksum = btoa(ab2str(checksumBytes));
+    console.log(`Sent request with checksum ${checksum}. TODO: Show this somwhere on the page.`);
+    const messageToEncrypt = JSON.stringify({
       action: 'query-code',
       url: location.origin,
       hash: hashHex,
+      oneTimePad: oneTimePadString,
+      checksum: checksum,
     });
     const importedAppPublicKey = await crypto.subtle.importKey(
       'spki',
@@ -122,7 +132,7 @@ async function checkForInput() {
     );
     const encryptedMessage = await crypto.subtle.encrypt({
       name: 'RSA-OAEP',
-    }, importedAppPublicKey, new TextEncoder().encode(messageUnencrypted));
+    }, importedAppPublicKey, new TextEncoder().encode(messageToEncrypt));
     webSocket.send(JSON.stringify({
       event: 'query-code',
       data: {
@@ -155,7 +165,12 @@ async function checkForInput() {
       if(decrypted.url !== location.origin) {
         return;
       }
-      input.value = decrypted.code;
+      const encryptedCodeArray = new Uint8Array(str2ab(atob(decrypted.code)));
+      for(let i = 0; i < oneTimePad.length; i++) {
+        encryptedCodeArray[i] ^= oneTimePad[i];
+      }
+      oneTimePad = undefined;
+      input.value = ab2str(encryptedCodeArray);
       input.dispatchEvent(
         new UIEvent('input', {
           view: window,

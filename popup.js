@@ -44,10 +44,6 @@ async function hashKey(publicKeyBase64) {
     .join('');
 }
 
-async function unlink() {
-
-}
-
 (async function () {
   let {
     publicKey,
@@ -75,10 +71,7 @@ async function unlink() {
   const secret = new Uint8Array(32);
   crypto.getRandomValues(secret);
   const hashHex = await hashKey(publicKeyBase64);
-  const secretHex = Array.from(secret)
-    .map(b => b.toString(16)
-      .padStart(2, '0'))
-    .join('');
+  const secretString = btoa(ab2str(secret));
   // The QR code will be generated after WS connection (since qrcode generation takes ~50ms and we have to wait for the server anyways)
   let qrcode;
   const ws = new WebSocket('wss://easytfa.genemon.at');
@@ -112,7 +105,7 @@ async function unlink() {
         }, importedPrivateKey,
         str2ab(message));
       const decrypted = JSON.parse(new TextDecoder().decode(decryptedBuf));
-      if(decrypted.secret !== secretHex) {
+      if(decrypted.secret !== secretString) {
         document.getElementById('status').innerHTML = `Someone tried linking with the wrong secret!`;
         return;
       }
@@ -134,7 +127,7 @@ async function unlink() {
   };
 
   qrcode = new QRCode('qrcode', {
-    text: `aegislink://h/?secret=${secretHex}&hash=${hashHex}`,
+    text: `aegislink://h/?secret=${secretString}&hash=${hashHex}`,
     correctLevel: QRCode.CorrectLevel.L,
   });
 })();
