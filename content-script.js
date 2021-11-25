@@ -1,3 +1,6 @@
+/*
+Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch, npm
+ */
 const config = {
   'https://dash.cloudflare.com': [{
     url: 'https://dash.cloudflare.com/two-factor',
@@ -20,7 +23,7 @@ const config = {
     submitSelector: () => document.getElementById('auth-signin-button'),
   }],
   'https://login.microsoftonline.com': [{
-    url: 'https://login.microsoftonline.com/',
+    url: 'https://login.microsoftonline.com',
     inputSelector: () => document.getElementsByName('otc')[0],
     submitSelector: () => document.querySelector('.button_primary'),
   }],
@@ -29,6 +32,23 @@ const config = {
     url: 'https://app.qa-yarrive.com',
     inputSelector: () => document.getElementById('tfa'),
     submitSelector: () => document.getElementById('login'),
+  }],
+  'https://console.wasabisys.com': [{
+    url: 'https://console.wasabisys.com/#/login',
+    inputSelector: () => document.getElementsByName('MFAToken')[0],
+    submitSelector: () => document.getElementsByTagName('button')[0],
+  }],
+  'https://www.paypal.com': [{
+    url: 'https://www.paypal.com/authflow/twofactor',
+    inputSelector: () => document.getElementById('otpCode'),
+    submitSelector: () => document.getElementsByTagName('button')[0],
+  }],
+  'https://old.reddit.com': [{
+    // TODO - maybe limit the rate here since this applies to the whole page?
+    url: 'https://old.reddit.com',
+    inputSelector: () => document.getElementById('otpfield'),
+    submitSelector: () => document.getElementsByClassName('tfa-login-submit')[0],
+
   }],
 };
 
