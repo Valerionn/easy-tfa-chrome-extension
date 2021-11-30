@@ -6,10 +6,12 @@
 </head>
 <body style="width: 256px; background-color: #ffffff; color: #000000;">
 <h3>Scan this QR-Code to link</h3>
-<div id="qrcode" style="display: none;"></div>
+<div id="qrcode" style="display: none;">
+    <canvas id="qr"></canvas>
+</div>
 <div id="status">Connecting to server...</div>
 <button id="unlink" style="display: none">Unlink</button>
-<script src="qrcode.min.js"></script>
+<script src="qrious.min.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

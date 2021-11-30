@@ -1,5 +1,5 @@
 /*
-Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch
+Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch, (autodesk), aws->amazon.com, yarrive, facebook, gitlab, uptimerobot
  */
 const config = {
   'https://dash.cloudflare.com': [{
@@ -54,6 +54,17 @@ const config = {
     inputSelector: () => document.getElementById('login_otp'),
     submitSelector: () => document.getElementsByTagName('button')[0],
   }],
+  'https://uptimerobot.com': [{
+    url: 'https://uptimerobot.com/login',
+    inputSelector: () => {
+      const code = document.getElementById('code');
+      // UptimeRobot always displays this input and just hides it.
+      // offsetParent is set to null if the element is not visible
+      if(code.offsetParent == null) return null;
+      return code;
+    },
+    submitSelector: () => document.querySelector('#twoFactorAuthForm .uk-button-primary'),
+  }],
 };
 
 let webSocket;
@@ -99,7 +110,7 @@ async function checkForInput() {
     console.log('Not linked yet.');
     return;
   }
-  webSocket = new WebSocket('wss://easytfa.genemon.at');
+  webSocket = new WebSocket('wss://eu-relay1.easytfa.com');
   webSocket.onopen = async () => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
     const hashArray = Array.from(new Uint8Array(hashBuffer));

@@ -77,8 +77,7 @@ async function hashKey(publicKeyBase64) {
     .join('');
 
   // The QR code will be generated after WS connection (since qrcode generation takes ~50ms and we have to wait for the server anyways)
-  let qrcode;
-  const ws = new WebSocket('wss://easytfa.genemon.at');
+  const ws = new WebSocket('wss://eu-relay1.easytfa.com');
   ws.onopen = () => {
     ws.send(JSON.stringify({
       event: 'start-linking',
@@ -123,15 +122,15 @@ async function hashKey(publicKeyBase64) {
       await (window['browser'] || chrome).storage.local.set({
         appPublicKey,
       });
-      qrcode.clear();
       document.getElementById('qrcode').innerHTML = '';
       document.getElementById('status').innerHTML = `Linking successful!`;
       ws.close();
     }
   };
 
-  qrcode = new QRCode('qrcode', {
-    text: `aegislink://h/?secret=${secretHex}&hash=${hashHex}`,
-    correctLevel: QRCode.CorrectLevel.L,
+  new QRious({
+    element: document.getElementById('qr'),
+    value: `aegislink://h/?secret=${secretHex}&hash=${hashHex}`,
+    size: 256,
   });
 })();
