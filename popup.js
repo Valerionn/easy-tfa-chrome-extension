@@ -89,7 +89,7 @@ async function hashKey(publicKeyBase64) {
     if(responseData.event === 'linking-started') {
       document.getElementById('qrcode').style.display = 'block';
       document.getElementById('status').innerHTML = '';
-    } else if(responseData.event === 'link') {
+    } else if(responseData.event === 'message') {
       const message = atob(responseData.message);
       // TODO - refactor this decrypt thingy into a separate method incl. str2ab
       const { privateKey } = await (window['browser'] || chrome).storage.local.get('privateKey');
@@ -108,11 +108,13 @@ async function hashKey(publicKeyBase64) {
         }, importedPrivateKey,
         str2ab(message));
       const decrypted = JSON.parse(new TextDecoder().decode(decryptedBuf));
+      // Ignore non-link-messages
+      if(decrypted.type !== 'link') return;
       if(decrypted.secret !== secretHex) {
         document.getElementById('status').innerHTML = `Someone tried linking with the wrong secret!`;
         return;
       }
-      const appPublicKeyBase64 = responseData.appPublicKey;
+      const appPublicKeyBase64 = responseData.data.appPublicKey;
       const hash = await hashKey(appPublicKeyBase64);
       if(hash !== decrypted.appPublicKeyHash) {
         document.getElementById('status').innerHTML = `Manipulated public key!`;
