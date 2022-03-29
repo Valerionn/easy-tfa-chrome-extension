@@ -1,0 +1,41 @@
+@keyframes easytfa-fadein-snackbar {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+#easytfa-overlay {
+    position: fixed;
+    top: 0;
+    z-index: 10000;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#easytfa-flexbox {
+    justify-content: center;
+    align-items: flex-start;
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+#easytfa-snackbar {
+    background-color: #323232;
+    color: #ffffffb3;
+    margin: 25px;
+    padding: 15px;
+    border-radius: 5px;
+    pointer-events: auto;
+    font-family: Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+    transform-origin: center;
+    animation-name: easytfa-fadein-snackbar;
+    animation-duration: 0.1s;
+}

@@ -46,6 +46,7 @@ async function checkForInput() {
     return;
   }
   webSocket = new WebSocket('wss://eu-relay1.easytfa.com');
+  let snackbar;
   webSocket.onopen = async () => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -59,6 +60,22 @@ async function checkForInput() {
     crypto.getRandomValues(checksumBytes);
     const checksum = btoa(ab2str(checksumBytes));
     console.log(`Sent request with checksum ${checksum}. TODO: Show this somwhere on the page.`);
+    // Show checkusm (TODO: move into function)
+    const body = document.getElementsByTagName('body')[0];
+    const overlay = document.createElement('div');
+    overlay.id = 'easytfa-overlay';
+    const flexbox = document.createElement('div');
+    overlay.appendChild(flexbox);
+    flexbox.id = 'easytfa-flexbox';
+    snackbar = document.createElement('div');
+    flexbox.appendChild(snackbar);
+    snackbar.id = 'easytfa-snackbar';
+    snackbar.innerText = `[EasyTfa] Request ${checksum}`;
+    body.appendChild(overlay);
+    snackbar.addEventListener('click', () => {
+      body.removeChild(overlay);
+    });
+    // End show checksum
     const messageToEncrypt = JSON.stringify({
       action: 'query-code',
       url: location.origin,
@@ -137,8 +154,10 @@ async function checkForInput() {
         // For Aurelia, we need this delay
         setTimeout(() => {
           submit.click();
-        }, 0)
+        }, 0);
       }
+      snackbar.innerText = 'TFA-Code received';
+
       webSocket.close();
     }
   };
