@@ -1,16 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Popup</title>
+  <meta charset="UTF-8">
+  <title>Popup</title>
+  <style>
+      a:visited {
+          color: LinkText;
+      }
+  </style>
 </head>
-<body style="width: 256px; background-color: #ffffff; color: #000000;">
-<h3>Scan this QR-Code to link</h3>
-<div id="qrcode" style="display: none;">
-    <canvas id="qr"></canvas>
+<body style="width: 350px; background-color: #ffffff; color: #000000;">
+<div id="page-loading">
+  Initializing EasyTFA...<br>
+  <em>This might take some time</em>
 </div>
-<div id="status">Connecting to server...</div>
-<button id="unlink" style="display: none">Unlink</button>
+<div id="page-init" style="display: none;">
+  <h3>EasyTFA setup</h3>
+  <form id="form-init" action="#">
+    <label for="server-selection">Choose your server:</label>
+    <select name="server" id="server-selection" style="width: 100%;">
+      <option value="eu-relay1.easytfa.com">EU Relay 1 - https://eu-relay1.easytfa.com (Default)</option>
+      <option value="eu-relay2.easytfa.com">EU Relay 2 - https://eu-relay2.easytfa.com</option>
+      <option value="custom">Custom/Self-hosted server</option>
+    </select><br>
+    <div id="server-custom-url-container" style="display: none;">
+      <div style="display: flex">
+        <div>https://</div>
+        <div style="flex-grow: 1; padding-right: 8px;"><input type="text" id="server-custom-url" name="server-custom-url" style="width: 100%"></div>
+      </div>
+    </div>
+    <button type="button" id="btn-test-server-connection" style="margin-top:5px;">Test server connection</button>
+    <br>
+    <button type="submit" id="btn-submit-server-connection" style="margin-top:5px;">Choose server</button>
+    <br>
+    <div id="result-test-server-connection"><em>Click the button above to display server information</em></div>
+  </form>
+
+  <p>
+    <a href="https://github.com/easytfa/easy-tfa-server" target="_blank">Want to host your own server?</a>
+  </p>
+</div>
+
+<div id="page-link" style="display: none;">
+  <h3>Scan this QR-Code to link</h3>
+  <div>
+    <b>URL:</b> <span id="server-url">(no server)</span>
+    <div><a href="#" id="switch-server-link">Switch server</a></div>
+    <div style="text-align: center">
+      <div id="qrcode" style="display: none;">
+        <canvas id="qr"></canvas>
+      </div>
+    </div>
+    <div id="status">Connecting to server...</div>
+  </div>
+  <p>
+    Open your app, go into the EasyTFA settings, select "Link Browser" and scan the QR code above to link your devices.
+  </p>
+  <p>
+    Make sure the server URL in the app matches the URL displayed above.
+  </p>
+</div>
+<div id="page-linked" style="display: none;">
+  This browser is currently linked to the app.<br>
+  <b>URL:</b> <span id="page-linked-server-url">(no server)</span>
+  <p>
+    <button type="button" id="page-linked-switch-server-link">Switch server</button><br>
+    You can always switch to a different server. Make sure that you select the same server on all devices.
+  </p>
+  <p>
+    <button id="unlink">Unlink</button><br>
+    Unlinking the browser extension will allow you to link a new app to this browser.
+    You can also use this button to re-link your app after you unlinked this browser in the app.
+  </p>
+</div>
 <script src="qrious.min.js"></script>
 <script src="popup.js"></script>
 </body>

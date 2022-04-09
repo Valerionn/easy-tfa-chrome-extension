@@ -1,5 +1,5 @@
 /*
-Todo: Twitter, Atlassian, namecheap, coinbase, slack, twitch, (autodesk), aws->amazon.com, yarrive, facebook, gitlab, uptimerobot
+Todo: Twitter, namecheap, coinbase, slack, twitch, (autodesk), aws->amazon.com, yarrive, facebook, gitlab
  */
 
 let webSocket;
@@ -26,7 +26,7 @@ async function handle() {
   const configToLoad = configs.find(config => location.href.startsWith(config.url));
   if(configToLoad == null) return;
   currentConfig = configToLoad;
-  keyPromise = (window['browser'] || chrome).storage.local.get(['publicKey', 'privateKey', 'appPublicKey']);
+  keyPromise = (window['browser'] || chrome).storage.local.get(['publicKey', 'privateKey', 'appPublicKey', 'serverUrl']);
   await checkForInput();
 }
 
@@ -40,12 +40,13 @@ async function checkForInput() {
   const {
     appPublicKey,
     publicKey,
+    serverUrl,
   } = await keyPromise;
   if(appPublicKey == null) {
     console.log('Not linked yet.');
     return;
   }
-  webSocket = new WebSocket('wss://eu-relay1.easytfa.com');
+  webSocket = new WebSocket(`wss://${serverUrl}`);
   let snackbar;
   webSocket.onopen = async () => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(btoa(publicKey)));
@@ -59,7 +60,6 @@ async function checkForInput() {
     const checksumBytes = new Uint8Array(3);
     crypto.getRandomValues(checksumBytes);
     const checksum = btoa(ab2str(checksumBytes));
-    console.log(`Sent request with checksum ${checksum}. TODO: Show this somwhere on the page.`);
     // Show checkusm (TODO: move into function)
     const body = document.getElementsByTagName('body')[0];
     const overlay = document.createElement('div');
@@ -161,11 +161,6 @@ async function checkForInput() {
       webSocket.close();
     }
   };
-
-  // const response = await fetch('http://localhost:3000/');
-  // const content = await response.json();
-  // console.log(content);
-  // input.value = content.code;
 }
 
 void handle();

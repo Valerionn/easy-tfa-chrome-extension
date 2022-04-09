@@ -14,9 +14,13 @@ function str2ab(str) {
   }
   return buf;
 }
+function escapeHTML(unsafeText) {
+  const div = document.createElement('div');
+  div.innerText = unsafeText;
+  return div.innerHTML;
+}
 
 async function createKeyPair() {
-  console.log('Generating new key...');
   const keyPair = await crypto.subtle.generateKey({
     name: 'RSA-OAEP',
     modulusLength: 4096,
@@ -44,29 +48,72 @@ async function hashKey(publicKeyBase64) {
     .join('');
 }
 
-(async function () {
-  let {
-    publicKey,
-    appPublicKey,
-  } = await (window['browser'] || chrome).storage.local.get(['publicKey', 'appPublicKey']);
-  if(publicKey == null) {
-    publicKey = (await createKeyPair()).publicKey;
+function getServerUrlFromForm() {
+  let serverUrl = document.getElementById('server-selection').value;
+  if(serverUrl === 'custom') {
+    serverUrl = document.getElementById('server-custom-url').value;
   }
-  if(appPublicKey != null && appPublicKey.trim() !== '') {
-    document.getElementById('status').innerHTML = 'Linked.';
-    document.getElementById('unlink').style.display = 'block';
-    document.getElementById('unlink').addEventListener('click', async () => {
-      const shouldUnlink = confirm('Really unlink?');
-      if(!shouldUnlink) return;
-      await (window['browser'] || chrome).storage.local.set({
-        publicKey: null,
-        privateKey: null,
-        appPublicKey: null,
-      });
-      location.reload();
+  return serverUrl;
+}
+
+/**
+ * This page will be shown if nothing is configured yet
+ */
+function showPageInit() {
+  document.getElementById('page-init').style.display = 'block';
+}
+
+function addPageInitEventListeners() {
+  document.getElementById('server-selection').addEventListener('change', () => {
+    const isCustomServer = document.getElementById('server-selection').value === 'custom';
+    document.getElementById('server-custom-url-container').style.display = isCustomServer ? 'block' : 'none';
+    document.getElementById('result-test-server-connection').innerHTML = '<em>Click the button above to display server information</em>';
+  });
+
+  document.getElementById('btn-test-server-connection').addEventListener('click', async () => {
+    const serverUrl = getServerUrlFromForm();
+
+    document.getElementById('result-test-server-connection').innerText = `Fetching https://${serverUrl}/config ...`;
+    try {
+      const latencyTimeStart = new Date().getTime();
+      const res = await fetch(`https://${serverUrl}/config`, { cache: 'no-cache' });
+      const latencyMs = new Date().getTime() - latencyTimeStart;
+      const data = await res.json();
+      document.getElementById('result-test-server-connection').innerHTML = `
+<h4>Server Test Result</h4>
+<b>URL:</b> https://${escapeHTML(serverUrl)}<br>
+<b>Version:</b> ${escapeHTML(data.version)}<br>
+<b>Push-Notifications:</b> ${data.push.supported ? '✔️' : '❌'}<br>
+<b>Latency:</b> ${latencyMs}ms`;
+    } catch(err) {
+      console.error(err);
+      document.getElementById('result-test-server-connection').innerText = `Invalid EasyTFA server: https://${serverUrl}/config`;
+    }
+  });
+
+  document.getElementById('form-init').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('page-init').style.display = 'none';
+    await (window['browser'] || chrome).storage.local.set({
+      serverUrl: getServerUrlFromForm(),
     });
+    await showPageLink();
+  });
+}
+
+async function showPageLink() {
+  const { publicKey, serverUrl, appPublicKey } = await (window['browser'] || chrome).storage.local.get(['publicKey', 'serverUrl', 'appPublicKey']);
+  if(publicKey == null || serverUrl == null) {
+    location.reload();
     return;
   }
+  if(appPublicKey != null) {
+    await showPageLinked();
+    return;
+  }
+  document.getElementById('page-link').style.display = 'block';
+  document.getElementById('qrcode').style.display = 'none';
+  document.getElementById('server-url').innerText = `https://${serverUrl}`;
   const publicKeyBase64 = btoa(publicKey);
   const secret = new Uint8Array(32);
   crypto.getRandomValues(secret);
@@ -76,8 +123,8 @@ async function hashKey(publicKeyBase64) {
       .padStart(2, '0'))
     .join('');
 
-  // The QR code will be generated after WS connection (since qrcode generation takes ~50ms and we have to wait for the server anyways)
-  const ws = new WebSocket('wss://eu-relay1.easytfa.com');
+  // The QR code will be generated after WS connection (since qrcode generation takes ~50ms, and we have to wait for the server anyway)
+  const ws = new WebSocket(`wss://${serverUrl}`);
   ws.onopen = () => {
     ws.send(JSON.stringify({
       event: 'start-linking',
@@ -125,8 +172,9 @@ async function hashKey(publicKeyBase64) {
         appPublicKey,
       });
       document.getElementById('qrcode').innerHTML = '';
-      document.getElementById('status').innerHTML = `Linking successful!`;
+      document.getElementById('page-link').style.display = 'none';
       ws.close();
+      await showPageLinked();
     }
   };
 
@@ -135,4 +183,57 @@ async function hashKey(publicKeyBase64) {
     value: `aegislink://h/?secret=${secretHex}&hash=${hashHex}`,
     size: 256,
   });
+}
+
+function addPageLinkEventListeners() {
+  document.getElementById('switch-server-link').addEventListener('click', async () => {
+    await (window['browser'] || chrome).storage.local.remove('serverUrl');
+    location.reload();
+  });
+}
+
+/**
+ * This page will be shown if the browser is linked
+ */
+async function showPageLinked() {
+  const { serverUrl } = await (window['browser'] || chrome).storage.local.get('serverUrl');
+  document.getElementById('page-linked').style.display = 'block';
+  document.getElementById('page-linked-server-url').innerText = serverUrl;
+}
+
+function addPageLinkedEventListeners() {
+  document.getElementById('unlink').addEventListener('click', async () => {
+    const shouldUnlink = confirm('Really unlink?');
+    if(!shouldUnlink) return;
+    await (window['browser'] || chrome).storage.local.remove(['publicKey', 'privateKey', 'appPublicKey', 'serverUrl']);
+    location.reload();
+  });
+  document.getElementById('page-linked-switch-server-link').addEventListener('click', async () => {
+    document.getElementById('page-linked').style.display = 'none';
+    showPageInit();
+  });
+}
+
+(async function () {
+  let {
+    publicKey,
+    appPublicKey,
+    serverUrl,
+  } = await (window['browser'] || chrome).storage.local.get(['publicKey', 'appPublicKey', 'serverUrl']);
+  if(publicKey == null) {
+    await createKeyPair();
+  }
+  addPageInitEventListeners();
+  addPageLinkEventListeners();
+  addPageLinkedEventListeners();
+  document.getElementById('page-loading').style.display = 'none';
+
+  if(serverUrl == null) {
+    showPageInit();
+  }
+  else if(appPublicKey != null && appPublicKey.trim() !== '') {
+    await showPageLinked();
+  } else {
+    await showPageLink();
+  }
 })();
