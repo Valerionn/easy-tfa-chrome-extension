@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "EasyTFA",
-  "version": "0.0.1",
-  "description": "Connect your browser with the EasyTFA app to automatically transmit TOTP codes",
+  "version": "0.1.0",
+  "description": "Connect your browser with the EasyTFA app to automatically transmit 2FA codes",
   "author": "Mattis Turin-Zelenko",
   "content_scripts": [{
     "matches": ["https://*/*"],

@@ -19,6 +19,11 @@ window.config = {
     inputSelector: () => document.getElementById('auth-mfa-otpcode'),
     submitSelector: () => document.getElementById('auth-signin-button'),
   }],
+  'https://www.amazon.com': [{
+    url: 'https://www.amazon.com/ap',
+    inputSelector: () => document.getElementById('auth-mfa-otpcode'),
+    submitSelector: () => document.getElementById('auth-signin-button'),
+  }],
   'https://login.microsoftonline.com': [{
     url: 'https://login.microsoftonline.com',
     inputSelector: () => document.getElementsByName('otc')[0],
@@ -61,5 +66,10 @@ window.config = {
       return code;
     },
     submitSelector: () => document.querySelector('#twoFactorAuthForm .uk-button-primary'),
+  }],
+  'https://auth.atlassian.com': [{
+    url: 'https://auth.atlassian.com/mf',
+    inputSelector: () => document.getElementById('two-step-verification-otp-code-input'),
+    submitSelector: () => document.querySelector('#two-step-verification-submit button'),
   }],
 };
