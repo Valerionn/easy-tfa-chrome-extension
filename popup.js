@@ -14,11 +14,6 @@ function str2ab(str) {
   }
   return buf;
 }
-function escapeHTML(unsafeText) {
-  const div = document.createElement('div');
-  div.innerText = unsafeText;
-  return div.innerHTML;
-}
 
 async function createKeyPair() {
   const keyPair = await crypto.subtle.generateKey({
@@ -67,27 +62,29 @@ function addPageInitEventListeners() {
   document.getElementById('server-selection').addEventListener('change', () => {
     const isCustomServer = document.getElementById('server-selection').value === 'custom';
     document.getElementById('server-custom-url-container').style.display = isCustomServer ? 'block' : 'none';
-    document.getElementById('result-test-server-connection').innerHTML = '<em>Click the button above to display server information</em>';
+    for(const element of document.getElementsByClassName('result-test-server-field')) {
+      element.innerText = '-';
+    }
+    document.getElementById('result-test-server-status').innerText = '';
   });
 
   document.getElementById('btn-test-server-connection').addEventListener('click', async () => {
     const serverUrl = getServerUrlFromForm();
 
-    document.getElementById('result-test-server-connection').innerText = `Fetching https://${serverUrl}/config ...`;
+    document.getElementById('result-test-server-status').innerText = `Fetching https://${serverUrl}/config ...`;
     try {
       const latencyTimeStart = new Date().getTime();
       const res = await fetch(`https://${serverUrl}/config`, { cache: 'no-cache' });
       const latencyMs = new Date().getTime() - latencyTimeStart;
       const data = await res.json();
-      document.getElementById('result-test-server-connection').innerHTML = `
-<h4>Server Test Result</h4>
-<b>URL:</b> https://${escapeHTML(serverUrl)}<br>
-<b>Version:</b> ${escapeHTML(data.version)}<br>
-<b>Push-Notifications:</b> ${data.push.supported ? '✔️' : '❌'}<br>
-<b>Latency:</b> ${latencyMs}ms`;
+      document.getElementById('result-test-server-url').innerText = serverUrl;
+      document.getElementById('result-test-server-version').innerText = data.version;
+      document.getElementById('result-test-server-push-notifications').innerText = data.push.supported ? '✔️' : '❌';
+      document.getElementById('result-test-server-latency').innerText = `${latencyMs}ms`;
+      document.getElementById('result-test-server-status').innerText = '';
     } catch(err) {
       console.error(err);
-      document.getElementById('result-test-server-connection').innerText = `Invalid EasyTFA server: https://${serverUrl}/config`;
+      document.getElementById('result-test-server-status').innerText = `Invalid EasyTFA server: https://${serverUrl}/config: ${err}`;
     }
   });
 
